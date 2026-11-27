@@ -157,7 +157,7 @@ jobs:
           $f = Join-Path $port "${{ inputs.name }}_functions.toml"
           if (-not (Test-Path $f)) { Write-Host "::error::functions toml not found: $f"; exit 1 }
           # extra missing functions found from crash logs (one per line)
-          $extra = @('0x82696B4C')
+          $extra = @('0x82696B4C', '0x827E6BE0', '0x827E5F90', '0x827E7708', '0x827E7E48')
           $added = 0
           foreach ($a in $extra) {
             if (-not (Select-String -Path $f -SimpleMatch "`"$a`"" -Quiet)) {
