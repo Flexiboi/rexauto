@@ -150,6 +150,28 @@ jobs:
           python rexauto.py @args 2>&1 | Tee-Object -FilePath "$env:REXAUTO_WORK\${{ inputs.name }}\_pipeline.log"
           exit $LASTEXITCODE
 
+      - name: Add manual cures and rebuild
+        shell: pwsh
+        run: |
+          $port = "$env:REXAUTO_WORK\${{ inputs.name }}\port"
+          $f = Join-Path $port "${{ inputs.name }}_functions.toml"
+          if (-not (Test-Path $f)) { Write-Host "::error::functions toml not found: $f"; exit 1 }
+          # extra missing functions found from crash logs (one per line)
+          $extra = @('0x82696B4C')
+          $added = 0
+          foreach ($a in $extra) {
+            if (-not (Select-String -Path $f -SimpleMatch "`"$a`"" -Quiet)) {
+              Add-Content -Path $f -Value "`"$a`" = {}" -Encoding ASCII
+              $added++
+            }
+          }
+          Write-Host "manual cures added: $added"
+          if ($added -gt 0) {
+            $args2 = @("${{ steps.fetch.outputs.container }}", "--name", "${{ inputs.name }}", "--no-jumptables", "--only", "build")
+            python rexauto.py @args2 2>&1 | Tee-Object -FilePath "$env:REXAUTO_WORK\${{ inputs.name }}\_pipeline_manual.log"
+            exit $LASTEXITCODE
+          }
+
       - name: Title metadata (name, Title ID, cover)
         id: meta
         if: always()
